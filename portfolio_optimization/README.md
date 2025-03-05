@@ -12,5 +12,12 @@ This project based on **Modern Portfolio Theory** (1952) by Markowitz since it i
 :heavy_check_mark: Plot the **efficient frontier** to show risk-return *tradeoff*
 
 ## 📊 **Efficient Frontier**
-The red star (⭐) shows the *optimal* portfolio with the best risk-return
+The red star (⭐) shows the *optimal* portfolio with the best risk-return 
+
+
+## :hammer_and_wrench: **Installation**
+
+The required packages are in requirements.txt so you just need to :
+```sh
+pip install -r requirements.txt
 
