@@ -5,7 +5,7 @@ import yfinance as yf
 from scipy.optimize import minimize
 from alpha_vantage.timeseries import TimeSeries
 import requests
-
+import os 
 ## Using MAANG (Meta, Amazon, Apple, Netflix, and Google) Stocks
 #tickers = ['META', 'AMZN', 'AAPL', 'NFLX', 'GOOGL']
 
@@ -20,12 +20,15 @@ import requests
 #df = stock.history(period="1mo")
 #print(df)
 
-url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=META&outputsize=full&apikey=Y2FE60C8AV6LY2QH'
-r = requests.get(url)
-data = r.json()
+# extract api key
+alpha_key = os.getenv('API_KEY')
+meta_url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=META&outputsize=full&apikey={alpha_key}'
 
 # function to tidy up the json to dataframe 
-def tidy_json(stock_json) :
+def stock_to_df(stock_metadata) :
+    """Function to took data from alpha vantage api then change it more readable shape and dataframe"""
+    r = requests.get(stock_metadata)
+    stock_jeson = r.json()
     # Extract the time series data
     time_series_data = stock_json['Time Series (Daily)']
 
@@ -40,3 +43,5 @@ def tidy_json(stock_json) :
     df.rename(columns={'index': 'Date'}, inplace=True)
     
     return df
+
+stock_to_df(meta_url)
