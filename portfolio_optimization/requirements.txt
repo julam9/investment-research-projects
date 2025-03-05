@@ -1,0 +1,7 @@
+numpy
+pandas
+matplotlib
+scipy
+yfinance==0.2.40
+requests
+alpha_vantage
