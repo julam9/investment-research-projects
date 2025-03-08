@@ -73,31 +73,31 @@ stock_daily_return = stock_data.pct_change().dropna()
 
 """ EDA """
 # plot the return of five stocks
-dates = pd.to_datetime(stock_daily_return.index)
-plt.figure(figsize=(12, 8))
-plt.plot(dates, stock_daily_return['META'], label='META')
-plt.plot(dates, stock_daily_return['AMZN'], label='AMZN')
-plt.plot(dates, stock_daily_return['AAPL'], label='AAPL')
-plt.plot(dates, stock_daily_return['NFLX'], label='NFLX')
-plt.plot(dates, stock_daily_return['GOOGL'], label='GOOGL')
+# dates = pd.to_datetime(stock_daily_return.index)
+# plt.figure(figsize=(12, 8))
+# plt.plot(dates, stock_daily_return['META'], label='META')
+# plt.plot(dates, stock_daily_return['AMZN'], label='AMZN')
+# plt.plot(dates, stock_daily_return['AAPL'], label='AAPL')
+# plt.plot(dates, stock_daily_return['NFLX'], label='NFLX')
+# plt.plot(dates, stock_daily_return['GOOGL'], label='GOOGL')
 
 # Customize ticks, titles and labels
-plt.title('Daily Return of 5 Stocks')
-plt.xlabel('Date')
-plt.ylabel('Values')
+# plt.title('Daily Return of last 2 years MAANG')
+# plt.xlabel('Date')
+# plt.ylabel('Values')
 
 # Set major ticks format
-plt.gca().xaxis.set_major_locator(mdates.MonthLocator())  # Major ticks every month
-plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))  # Format as 'Jan 2020'
+# plt.gca().xaxis.set_major_locator(mdates.MonthLocator())  # Major ticks every month
+# plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))  # Format as 'Jan 2020'
 
 # Rotate x-axis labels
-plt.xticks(rotation=45)
+#plt.xticks(rotation=45)
 
 # Show legend
-plt.legend(title='Columns')
+# plt.legend(title='Columns')
 
 # Save the plot
-plt.savefig('./image/MAANG Return Chart.jpg')
+# plt.savefig('./image/MAANG Return Chart.jpg')
 
 # Show the plot 
 # plt.show()
@@ -105,6 +105,9 @@ plt.savefig('./image/MAANG Return Chart.jpg')
 
 
 """ SIMULATION FOR PORTFOLIO OPTIMIZATION """
+
+# name of the stocks 
+maang_stocks = ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA"]
 
 # calculate daily returns
 stock_daily_return = stock_data.pct_change().dropna()
@@ -115,3 +118,57 @@ cov_matrix_annual = stock_daily_return.cov()*252
 
 # number of stocks
 num_stocks = stock_daily_return.shape[1]
+
+# number of portfolios generated through simulations
+simuls = 100000
+# array for storing the results
+results = np.zeros((3, simuls))
+
+# simulation
+for i in range(simuls):
+    weights = np.random.random(num_stocks)
+    weights /= np.sum(weights)
+
+    portfolio_return = np.sum(weights*mean_return_annual)
+    portfolio_stddev = np.sqrt(np.dot(weights.T, np.dot(cov_matrix_annual, weights)))
+    sharpe_ratio = portfolio_return/portfolio_stddev
+
+    results[0, i] = portfolio_return
+    results[1, i] = portfolio_stddev
+    results[2, i] = sharpe_ratio
+
+# find optimal portfolio
+def optimal_portfolio(weights):
+    return -np.sum(weights*mean_return_annual)/np.sqrt(np.dot(weights.T, np.dot(cov_matrix_annual, weights)))
+
+# set the constraints
+constraints = ({'type':'eq', 'fun':lambda x:np.sum(x)-1}) # sum of weights equal to 1
+bounds = tuple((0, 1) for _ in range(num_stocks)) # weights can't be negative
+initial_guess = np.ones(num_stocks)/num_stocks
+
+optimal_port = minimize(optimal_portfolio, initial_guess, method='SLSQP', bounds=bounds, constraints=constraints)
+optimal_weights = optimal_port.x
+
+# optimal portfolio return and risk
+optimal_port_return = np.sum(optimal_weights*mean_return_annual)
+optimal_port_risk = np.sqrt(np.dot(optimal_weights.T, np.dot(cov_matrix_annual, optimal_weights)))
+optimal_port_sharpe = optimal_port_return/optimal_port_risk
+
+# plot efficient frontier
+plt.scatter(results[1], results[0], c=results[2], cmap="viridis", alpha=0.5)
+plt.colorbar(label="Sharpe Ratio")
+plt.scatter(optimal_port_risk, optimal_port_return, c="red", marker="*", s=200, label="Optimal Portfolio")
+plt.xlabel("Risk (Standard Deviation)")
+plt.ylabel("Expected Return")
+plt.title("Efficient Frontier") 
+plt.legend()
+plt.savefig('./image/Efficient Frontier.jpg')
+
+# Print Results
+print("Optimal Portfolio Weights:")
+for stock, weight in zip(maang_stocks, optimal_weights):
+    print(f"{stock}: {weight:.2%}")
+
+print(f"\nExpected Return: {optimal_port_return:.2%}")
+print(f"Risk (Standard Deviation): {optimal_port_risk:.2%}")
+print(f"Sharpe Ratio: {optimal_port_sharpe:.2f}")
